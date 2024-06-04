@@ -1,4 +1,5 @@
 (library
   (name ninety_nine_problems)
+  (libraries base)
   (inline_tests)
-  (preprocess (pps ppx_inline_test)))
+  (preprocess (pps ppx_inline_test ppx_assert)))
