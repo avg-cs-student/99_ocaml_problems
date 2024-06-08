@@ -201,3 +201,31 @@ let%test_unit "split-too-many" =
   [%test_result: Base.string Base.list * Base.string Base.list]
     (split [ "a"; "b"; "c"; "d"; "e" ] 10)
     ~expect:([ "a"; "b"; "c"; "d"; "e" ], [])
+
+let remove_at k lst =
+  let rec aux acc k = function
+    | [] -> acc
+    | [ h ] -> if k = 0 then acc else h :: acc
+    | h :: t -> if k > 0 then aux (h :: acc) (k - 1) t else t @ acc
+  in
+  rev (aux [] k lst)
+
+let%test_unit "remove_at-zero" =
+  [%test_result: Base.string Base.list]
+    (remove_at 0 [ "a"; "b" ])
+    ~expect:[ "b" ]
+
+let%test_unit "remove_at-one" =
+  [%test_result: Base.string Base.list]
+    (remove_at 1 [ "a"; "b"; "c" ])
+    ~expect:[ "a"; "c" ]
+
+let%test_unit "remove_at-two" =
+  [%test_result: Base.string Base.list]
+    (remove_at 2 [ "a"; "b"; "c" ])
+    ~expect:[ "a"; "b" ]
+
+let%test_unit "remove_at-three" =
+  [%test_result: Base.string Base.list]
+    (remove_at 3 [ "a"; "b"; "c" ])
+    ~expect:[ "a"; "b"; "c" ]
