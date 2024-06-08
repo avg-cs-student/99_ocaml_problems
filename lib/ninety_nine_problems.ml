@@ -229,3 +229,29 @@ let%test_unit "remove_at-three" =
   [%test_result: Base.string Base.list]
     (remove_at 3 [ "a"; "b"; "c" ])
     ~expect:[ "a"; "b"; "c" ]
+
+let insert_at elem pos lst =
+  let rec aux acc elem pos = function
+    | [] -> if pos = 0 then elem::acc else []
+    | [ h ] ->
+        if pos = 0 then acc @ [ elem ] @ [ h ] else acc @ [ h ] @ [ elem ]
+    | h :: t as lst ->
+        if pos = 0 then elem :: lst else aux (acc @ [ h ]) elem (pos - 1) t
+  in
+  aux [] elem pos lst
+
+let%test_unit "insert_at-zero" =
+  [%test_result: Base.string Base.list]
+    (insert_at "wat" 0 [ "a"; "b"; "c" ])
+    ~expect:[ "wat"; "a"; "b"; "c" ]
+
+let%test_unit "insert_at-two" =
+  [%test_result: Base.string Base.list]
+    (insert_at "wat" 2 [ "a"; "b"; "c" ])
+    ~expect:[ "a"; "b"; "wat"; "c" ]
+
+let%test_unit "insert_at-empty-nok" =
+  [%test_result: Base.string Base.list] (insert_at "wat" 2 []) ~expect:[]
+
+let%test_unit "insert_at-empty-ok" =
+  [%test_result: Base.string Base.list] (insert_at "wat" 0 []) ~expect:[ "wat" ]
