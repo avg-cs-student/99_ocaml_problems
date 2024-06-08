@@ -97,14 +97,14 @@ let%test_unit "palindrome-four-no" =
   [%test_result: Base.bool] (is_palindrome [ "a"; "b"; "c"; "a" ]) ~expect:false
 
 let rl_encode lst =
-  let rec encode count last acc = function
-    | [] -> (count, last) :: acc
-    | hd :: tl ->
-        if hd = last then encode (count + 1) hd acc tl
-        else if count != 0 then encode 1 hd ((count, last) :: acc) tl
-        else encode 1 hd acc tl
+  let rec encode count acc = function
+    | [] -> acc
+    | [ hd ] -> (count + 1, hd) :: acc
+    | first :: (second :: _ as tl) ->
+        if first = second then encode (count + 1) acc tl
+        else encode 0 ((count + 1, first) :: acc) tl
   in
-  rev (encode 0 "" [] lst)
+  encode 0 [] (rev lst)
 
 let%test_unit "rl_encode-one" =
   [%test_result: (Base.int * Base.string) Base.list] (rl_encode [ "a" ])
@@ -124,3 +124,80 @@ let%test_unit "rl_encode-six" =
   [%test_result: (Base.int * Base.string) Base.list]
     (rl_encode [ "a"; "a"; "b"; "c"; "c"; "c" ])
     ~expect:[ (2, "a"); (1, "b"); (3, "c") ]
+
+type 'a rle = One of 'a | Many of Base.int * 'a [@@deriving sexp_of]
+
+let modified_rl_encode lst =
+  let rec encode count acc = function
+    | [] -> acc
+    | [ hd ] -> if count = 0 then One hd :: acc else Many (count + 1, hd) :: acc
+    | h1 :: (h2 :: _ as tl) ->
+        if h1 != h2 && count = 0 then encode 0 (One h1 :: acc) tl
+        else if h1 = h2 then encode (count + 1) acc tl
+        else encode 0 (Many (count + 1, h1) :: acc) tl
+  in
+  rev (encode 0 [] lst)
+
+let%test "mrl_encode-two-same" =
+  modified_rl_encode [ "a"; "a" ] = [ Many (2, "a") ]
+
+let%test "mrl_encode-two-same-one-diff" =
+  modified_rl_encode [ "a"; "a"; "b" ] = [ Many (2, "a"); One "b" ]
+
+let%test "mrl-encode-complex" =
+  modified_rl_encode [ 1; 0; 32; 32; 32; 0; 1; 1; 1 ]
+  = [ One 1; One 0; Many (3, 32); One 0; Many (3, 1) ]
+
+let duplicate lst =
+  let rec clone acc = function
+    | [] -> acc
+    | hd :: tl -> clone (hd :: hd :: acc) tl
+  in
+  rev (clone [] lst)
+
+let%test_unit "duplicate-none" =
+  [%test_result: Base.string Base.list] (duplicate []) ~expect:[]
+
+let%test_unit "duplicate-one" =
+  [%test_result: Base.string Base.list] (duplicate [ "a" ]) ~expect:[ "a"; "a" ]
+
+let%test_unit "duplicate-two" =
+  [%test_result: Base.string Base.list]
+    (duplicate [ "a"; "b" ])
+    ~expect:[ "a"; "a"; "b"; "b" ]
+
+let split lst num =
+  let mov acc = function
+    | [] -> (acc, [])
+    | [ h ] -> (h :: acc, [])
+    | h :: t -> (h :: acc, t)
+  in
+  let rec swap (l1, l2) i =
+    if i <= 0 then (rev l1, l2) else swap (mov l1 l2) (i - 1)
+  in
+  swap ([], lst) num
+
+let%test_unit "split-none" =
+  [%test_result: Base.string Base.list * Base.string Base.list]
+    (split [ "a"; "b"; "c"; "d"; "e" ] 0)
+    ~expect:([], [ "a"; "b"; "c"; "d"; "e" ])
+
+let%test_unit "split-one" =
+  [%test_result: Base.string Base.list * Base.string Base.list]
+    (split [ "a"; "b" ] 1)
+    ~expect:([ "a" ], [ "b" ])
+
+let%test_unit "split-two" =
+  [%test_result: Base.string Base.list * Base.string Base.list]
+    (split [ "a"; "b"; "c"; "d" ] 2)
+    ~expect:([ "a"; "b" ], [ "c"; "d" ])
+
+let%test_unit "split-five" =
+  [%test_result: Base.string Base.list * Base.string Base.list]
+    (split [ "a"; "b"; "c"; "d"; "e" ] 5)
+    ~expect:([ "a"; "b"; "c"; "d"; "e" ], [])
+
+let%test_unit "split-too-many" =
+  [%test_result: Base.string Base.list * Base.string Base.list]
+    (split [ "a"; "b"; "c"; "d"; "e" ] 10)
+    ~expect:([ "a"; "b"; "c"; "d"; "e" ], [])
