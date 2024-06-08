@@ -258,8 +258,8 @@ let%test_unit "insert_at-empty-ok" =
 
 let range start stop =
   let rec ascend acc start stop =
-    if start < stop then ascend (acc @ [ start ]) (start + 1) stop
-    else acc @ [ start ]
+    if start = stop then acc @ [ start ]
+    else ascend (acc @ [ start ]) (start + 1) stop
   in
   if start < stop then ascend [] start stop else rev (ascend [] stop start)
 
