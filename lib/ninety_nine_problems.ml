@@ -232,7 +232,7 @@ let%test_unit "remove_at-three" =
 
 let insert_at elem pos lst =
   let rec aux acc elem pos = function
-    | [] -> if pos = 0 then elem::acc else []
+    | [] -> if pos = 0 then elem :: acc else []
     | [ h ] ->
         if pos = 0 then acc @ [ elem ] @ [ h ] else acc @ [ h ] @ [ elem ]
     | h :: t as lst ->
@@ -255,3 +255,23 @@ let%test_unit "insert_at-empty-nok" =
 
 let%test_unit "insert_at-empty-ok" =
   [%test_result: Base.string Base.list] (insert_at "wat" 0 []) ~expect:[ "wat" ]
+
+let range start stop =
+  let rec ascend acc start stop =
+    if start < stop then ascend (acc @ [ start ]) (start + 1) stop
+    else acc @ [ start ]
+  in
+  if start < stop then ascend [] start stop else rev (ascend [] stop start)
+
+let%test_unit "range-0-0" =
+  [%test_result: Base.int Base.list] (range 0 0) ~expect:[ 0 ]
+
+let%test_unit "range-0-3" =
+  [%test_result: Base.int Base.list] (range 0 3) ~expect:[ 0; 1; 2; 3 ]
+
+let%test_unit "range-3-0" =
+  [%test_result: Base.int Base.list] (range 3 0) ~expect:[ 3; 2; 1; 0 ]
+
+let%test_unit "range-neg3-pos3" =
+  [%test_result: Base.int Base.list] (range (-3) 3)
+    ~expect:[ -3; -2; -1; 0; 1; 2; 3 ]
