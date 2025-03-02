@@ -43,3 +43,6 @@ val replicate : 'a list -> int -> 'a list
 
 val drop : 'a list -> int -> 'a list
 (** Problem 14: [drop: list n] Drop every n'th element from a list. *)
+
+val extract : 'a list -> int -> int -> 'a list
+(** Problem 15: [extract: list start stop] Extract a slice from a list. *)

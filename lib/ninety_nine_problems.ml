@@ -352,3 +352,67 @@ let%test_unit "drop-every-third" =
 
 let%test_unit "drop-every-item" =
   [%test_result: Base.int Base.list] (drop [ 0; 1; 2; 3 ] 1) ~expect:[]
+
+let extract lst first last =
+  let rec discard_rear acc count = function
+    | [] -> acc
+    | [ h ] -> if count <= 0 then acc else h :: acc
+    | h :: t ->
+        if count <= 0 then acc else discard_rear (h :: acc) (count - 1) t
+  in
+  let rec discard_front count = function
+    | [] -> []
+    | [ h ] -> if count <= 0 then [ h ] else []
+    | h :: t -> if count <= 0 then h :: t else discard_front (count - 1) t
+  in
+  discard_front first (List.rev (discard_rear [] (last + 1) lst))
+
+let%test_unit "slice-middle-1" =
+  [%test_result: Base.int Base.list]
+    (extract [ 0; 1; 2; 3; 4; 5 ] 1 1)
+    ~expect:[ 1 ]
+
+let%test_unit "slice-middle-2" =
+  [%test_result: Base.int Base.list]
+    (extract [ 0; 1; 2; 3; 4; 5 ] 1 2)
+    ~expect:[ 1; 2 ]
+
+let%test_unit "slice-middle-3" =
+  [%test_result: Base.int Base.list]
+    (extract [ 0; 1; 2; 3; 4; 5 ] 1 3)
+    ~expect:[ 1; 2; 3 ]
+
+let%test_unit "slice-beginning-1" =
+  [%test_result: Base.int Base.list]
+    (extract [ 0; 1; 2; 3; 4; 5 ] 0 0)
+    ~expect:[ 0 ]
+
+let%test_unit "slice-beginning-2" =
+  [%test_result: Base.int Base.list]
+    (extract [ 0; 1; 2; 3; 4; 5 ] 0 1)
+    ~expect:[ 0; 1 ]
+
+let%test_unit "slice-end-1" =
+  [%test_result: Base.int Base.list]
+    (extract [ 0; 1; 2; 3; 4; 5 ] 5 5)
+    ~expect:[ 5 ]
+    
+let%test_unit "slice-end-2" =
+  [%test_result: Base.int Base.list]
+    (extract [ 0; 1; 2; 3; 4; 5 ] 4 5)
+    ~expect:[ 4; 5 ]
+
+let%test_unit "slice-all-valid" =
+  [%test_result: Base.int Base.list]
+    (extract [ 0; 1; 2; 3; 4; 5 ] 0 5)
+    ~expect:[ 0; 1; 2; 3; 4; 5 ]
+
+let%test_unit "slice-all-invalid-1" =
+  [%test_result: Base.int Base.list]
+    (extract [ 0; 1; 2; 3; 4; 5 ] 0 8)
+    ~expect:[ 0; 1; 2; 3; 4; 5 ]
+
+let%test_unit "slice-all-invalid-2" =
+  [%test_result: Base.int Base.list]
+    (extract [ 0; 1; 2; 3; 4; 5 ] (-1) 8)
+    ~expect:[ 0; 1; 2; 3; 4; 5 ]
