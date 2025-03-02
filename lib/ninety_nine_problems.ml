@@ -275,3 +275,80 @@ let%test_unit "range-3-0" =
 let%test_unit "range-neg3-pos3" =
   [%test_result: Base.int Base.list] (range (-3) 3)
     ~expect:[ -3; -2; -1; 0; 1; 2; 3 ]
+
+let compress lst =
+  let same_as_head elem = function
+    | [] -> false
+    | h :: _ -> if elem = h then true else false
+  in
+  let rec aux acc = function
+    | [] -> rev acc
+    | [ h ] -> if same_as_head h acc then aux acc [] else aux (h :: acc) []
+    | h :: t -> if same_as_head h acc then aux acc t else aux (h :: acc) t
+  in
+  aux [] lst
+
+let%test_unit "compress-single" =
+  [%test_result: Base.int Base.list] (compress [ 1 ]) ~expect:[ 1 ]
+
+let%test_unit "compress-triple" =
+  [%test_result: Base.int Base.list] (compress [ 1; 1; 1 ]) ~expect:[ 1 ]
+
+let%test_unit "compress-multiple" =
+  [%test_result: Base.int Base.list]
+    (compress [ 0; 0; 1; 1; 1 ])
+    ~expect:[ 0; 1 ]
+
+let%test_unit "compress-complex" =
+  [%test_result: Base.int Base.list]
+    (compress [ 0; 0; 1; 0; 0; 1; 1; 1; 1 ])
+    ~expect:[ 0; 1; 0; 1 ]
+
+let replicate lst n =
+  let rec replicate_single acc item = function
+    | 0 -> acc
+    | n -> replicate_single (item :: acc) item (n - 1)
+  in
+  let rec map acc count = function
+    | [] -> acc
+    | [ h ] -> map (acc @ replicate_single [] h count) count []
+    | h :: t -> map (acc @ replicate_single [] h count) count t
+  in
+  map [] n lst
+
+let%test_unit "replicate-one" =
+  [%test_result: Base.int Base.list] (replicate [ 0 ] 1) ~expect:[ 0 ]
+
+let%test_unit "replicate-two" =
+  [%test_result: Base.int Base.list] (replicate [ 0 ] 2) ~expect:[ 0; 0 ]
+
+let%test_unit "replicate-ten" =
+  [%test_result: Base.int Base.list] (replicate [ 0 ] 10)
+    ~expect:[ 0; 0; 0; 0; 0; 0; 0; 0; 0; 0 ]
+
+let%test_unit "replicate-none" =
+  [%test_result: Base.int Base.list] (replicate [ 0 ] 0) ~expect:[]
+
+let%test_unit "replicate-many" =
+  [%test_result: Base.int Base.list]
+    (replicate [ 0; 1; 2 ] 3)
+    ~expect:[ 0; 0; 0; 1; 1; 1; 2; 2; 2 ]
+
+let drop lst n =
+  let rec aux acc count = function
+    | [] -> acc
+    | [ h ] -> if count == n then acc else h :: acc
+    | h :: t -> if count == n then aux acc 1 t else aux (h :: acc) (count + 1) t
+  in
+  List.rev (aux [] 1 lst)
+
+let%test_unit "drop-every-other" =
+  [%test_result: Base.int Base.list] (drop [ 0; 1; 2; 3 ] 2) ~expect:[ 0; 2 ]
+
+let%test_unit "drop-every-third" =
+  [%test_result: Base.int Base.list]
+    (drop [ 0; 1; 2; 3; 4; 5; 6; 7; 8 ] 3)
+    ~expect:[ 0; 1; 3; 4; 6; 7 ]
+
+let%test_unit "drop-every-item" =
+  [%test_result: Base.int Base.list] (drop [ 0; 1; 2; 3 ] 1) ~expect:[]
